@@ -1,7 +1,8 @@
 title: ZHU LIANG
 baseurl: /blogs/
 
-markdown: kramdown
+#markdown: kramdown
+markdown: redcarpet
 
 tracking_id: #
 
