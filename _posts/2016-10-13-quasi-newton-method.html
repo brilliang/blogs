@@ -1,7 +1,3 @@
----
-layout: null
----
-
 <!DOCTYPE html>
 <html>
 
@@ -568,7 +564,7 @@ div.prism-show-language > div.prism-show-language-label {
 <p>\( f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}*(x - x_k)^T H(x_k) (x - x_k) \) 
 <div align="right">(1)</div></p>
 
-<p>H is the Hessen matrix of function \( f \):</p>
+<p>H is the <a href="https://en.wikipedia.org/wiki/Hessian_matrix">hessian matrix</a> of function \( f \):</p>
 
 <p>\( H(x) = [\frac{\partial ^2f}{\partial x_i \partial y_j}]_{m*n} \)</p>
 
@@ -597,15 +593,15 @@ after expanding it, we can get </p>
 
 <p>the theory under it is that the negative gradient shows the direction where the value of f descents fastest.</p>
 
-<h2 id="toc_3">if Hessen matrix is <a href="https://en.wikipedia.org/wiki/Positive-definite_matrix">positive definite</a></h2>
+<h2 id="toc_3">if hessian matrix is <a href="https://en.wikipedia.org/wiki/Positive-definite_matrix">positive definite</a></h2>
 
-<p>Compare Newton method to gradient descent method, it is easy to see that we are using the the \( -H(x_k) \) as the optimisation direction. The point is, if the hessen matrix is positive definite, then this direction is always points to descent.</p>
+<p>Compare Newton method to gradient descent method, it is easy to see that we are using the the \( -H(x_k) \) as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.</p>
 
 <p>if we substitue x with (3), into (1), and ignore second order item, we can get:</p>
 
 <p>\( f(x) = f_k - g_k^T * H_k^{-1} * g_k\)</p>
 
-<p>then we get the result: if the Hessen matrix is positive definite, which means \(  g_k^T * H_k^{-1} * g_k &gt; 0 \), then f(x) will go the descent direction.</p>
+<p>then we get the result: if the hessian matrix is positive definite, which means \(  g_k^T * H_k^{-1} * g_k &gt; 0 \), then f(x) will go the descent direction.</p>
 
 <h2 id="toc_4">quasi-Newton condition</h2>
 
@@ -642,7 +638,7 @@ or,  \( H_k^{-1}  y_k = \delta_k\)
 
 <h2 id="toc_7">BFGS</h2>
 
-<p>if we consider the quasi-Newton condition in the persipective of hessen matrix, rather than its reverse:\( H_k \delta_k = y_k \)</p>
+<p>if we consider the quasi-Newton condition in the persipective of hessian matrix, rather than its reverse:\( H_k \delta_k = y_k \)</p>
 
 <p>We can try to find a matrix B to approximate H. Using the same method as DFP, \( B_{k+1} = B_k + P_k + Q_k \)</p>
 

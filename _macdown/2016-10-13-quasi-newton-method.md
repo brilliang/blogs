@@ -8,7 +8,7 @@ All stories come from the [Taylor Expansion ](https://en.wikipedia.org/wiki/Tayl
 $ f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}*(x - x_k)^T H(x_k) (x - x_k) $ 
 <div align="right">(1)</div>
 
-H is the Hessen matrix of function $ f $:
+H is the [hessian matrix](https://en.wikipedia.org/wiki/Hessian_matrix) of function $ f $:
 
 $ H(x) = [\frac{\partial ^2f}{\partial x_i \partial y_j}]_{m*n} $
 
@@ -37,14 +37,14 @@ $ x_{k+1} = x_k - \lambda g_k$
 
 the theory under it is that the negative gradient shows the direction where the value of f descents fastest.
 
-## if Hessen matrix is [positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix)
-Compare Newton method to gradient descent method, it is easy to see that we are using the the $ -H(x_k) $ as the optimisation direction. The point is, if the hessen matrix is positive definite, then this direction is always points to descent.
+## if hessian matrix is [positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix)
+Compare Newton method to gradient descent method, it is easy to see that we are using the the $ -H(x_k) $ as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.
 
 if we substitue x with (3), into (1), and ignore second order item, we can get:
 
 $ f(x) = f_k - g_k^T * H_k^{-1} * g_k$
 
-then we get the result: if the Hessen matrix is positive definite, which means $  g_k^T * H_k^{-1} * g_k > 0 $, then f(x) will go the descent direction.
+then we get the result: if the hessian matrix is positive definite, which means $  g_k^T * H_k^{-1} * g_k > 0 $, then f(x) will go the descent direction.
 
 ## quasi-Newton condition
 From (2), it is easy to get $ g_{k+1} - g_k = H_k * (x_{k+1} - x_k)$
@@ -75,7 +75,7 @@ $ P_k = \frac{\delta _k \delta_k ^T}{\delta _k ^T y_k}; Q_k = - \frac{G_k y_k y_
 if the initial G is positive definite, then all G in iteration is positive definite.
 
 ## BFGS
-if we consider the quasi-Newton condition in the persipective of hessen matrix, rather than its reverse:$ H_k \delta_k = y_k $
+if we consider the quasi-Newton condition in the persipective of hessian matrix, rather than its reverse:$ H_k \delta_k = y_k $
 
 We can try to find a matrix B to approximate H. Using the same method as DFP, $ B_{k+1} = B_k + P_k + Q_k $
 
