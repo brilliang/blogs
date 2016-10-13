@@ -1,8 +1,4 @@
----
-layout: researcher
-title: quasi-Newton method 
----
-
+#quasi-Newton method 
 
 I am trying to understand all the detail in spark LogisticRegression, which applys different kinds of quasi-Newton methods for optimisaztion. In this article I will record what I have learnt about it.
 
@@ -93,8 +89,18 @@ $ P_k = \frac{y_k y_k^T}{y_k^T \delta_k}, Q_k=-\frac{B_k \delta_k \delta_k^T B_k
 if the initial G is positive definite, then all G in iteration is positive definite.
 
 ### Algorithm:
-1. set $x_0$ 
+1. initial $x_0$, choose a positive definite matrix $B_0, k=0$
+2. calculate $g_k = \nabla f(x_k)$, if $||g_k|| \leq \epsilon$, return $x = x_k$
+3. calculate $p_k$ from  $B_k p_k = g_k$
+4. linear search for step length $\lambda$:  $ argmin _ \lambda f(x_k + \lambda p_k) $
+5. update $x_{k+1} = x_k + \lambda p_k, k = k + 1$, goto step 2.
 
+## Broyden Algorithm
+by applying Sherman-Morrison formula twice, we can get another approximation of $H^{-1}$.
+we can linear combination the tow approximations of $H^{-1}$:
+
+$G_{k+1} = \alpha G^{DFP} + (1 - \alpha) G^{BFGS}$
+ 
 
 
 
