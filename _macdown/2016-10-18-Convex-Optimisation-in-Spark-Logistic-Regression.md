@@ -161,3 +161,11 @@ please note that the objective function is convex, so there is only 3 conditions
 
 <center>![owl-qn](/blogs/img/2016-10-18-owl-qn.png)</center>
 
+reference:
+
+* [Logistic Regression：入门到精通](http://www.tianyancha.com/research/LR_intro.pdf)
+* [ON THE LIMITED MEMORY BFGS METHOD FOR LARGE SCALE OPTIMIZATION](http://users.iems.northwestern.edu/~nocedal/PDFfiles/limited-memory.pdf)
+* [Overview of Quasi-Newton optimization methods](https://homes.cs.washington.edu/~galen/files/quasi-newton-notes.pdf)
+* [Updating Quasi-Newton Matrices with Limited Storage](http://www.ii.uib.no/~lennart/drgrad/Nocedal1980.pdf)
+* [Large-scale L-BFGS using MapReduce](http://papers.nips.cc/paper/5333-large-scale-l-bfgs-using-mapreduce.pdf)
+
