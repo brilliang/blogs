@@ -675,7 +675,7 @@ div.prism-show-language > div.prism-show-language-label {
 
 <h3 id="toc_11">Algorithm</h3>
 
-<p><center><img src="/blogs/img/2016-10-18%20lbfgs.png" alt="Algorithm"></center></p>
+<p><center><img src="/blogs/img/2016-10-18-lbfgs.png" alt="Algorithm"></center></p>
 
 <p>try to be a GENIUS to understand how this algorithm implement the formula (7).</p>
 
@@ -699,6 +699,31 @@ div.prism-show-language > div.prism-show-language-label {
 Y is the matrix \([y_{-1}, y_{-m}]\); S is the matrix \([s_{-1}, s_{-m}]\)</p>
 
 <p>In practise, M3 is a good choice.</p>
+
+<h2 id="toc_13">OWL-QN</h2>
+
+<p>When we try to apply L1 <a href="https://en.wikipedia.org/wiki/Regularization_(mathematics)">regularization</a> on the objective function, it becomes non differentiable, at the n points \(x_i\) = 0.</p>
+
+<p>OWL-QN method constructs the <em>pseudo derivative</em> of the objective function:</p>
+
+<p>\[
+\begin{equation}
+\diamond_i f(x) = 
+\left\{
+\begin{aligned}
+\overset{.}
+\partial_i^-f(x), if  \partial_i^-f(x) &gt; 0 \\
+\partial_i^+f(x), if  \partial_i^+f(x) &lt; 0 \\
+0, otherwise
+\end{aligned}
+\right.
+\end{equation}
+\]
+<div align="right">(8)</div></p>
+
+<p>please note that the objective function is convex, so there is only 3 conditions for the non differentiable point. The definition of (8) describs all the three conditions.</p>
+
+<p><center><img src="/blogs/img/2016-10-18-owl-qn.png" alt="owl-qn"></center></p>
 
 
 

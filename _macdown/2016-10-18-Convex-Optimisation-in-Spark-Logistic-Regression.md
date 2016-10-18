@@ -117,7 +117,7 @@ $ + s_{-1} \rho_{-1} s_{-1} $
 
 ### Algorithm
 
-<center>![Algorithm](2016-10-18 lbfgs.png)</center>
+<center>![Algorithm](/blogs/img/2016-10-18-lbfgs.png)</center>
 
 try to be a GENIUS to understand how this algorithm implement the formula (7).
 
@@ -136,3 +136,28 @@ where $||.||_F$ is Frobenius norm;
 Y is the matrix $[y_{-1}, y_{-m}]$; S is the matrix $[s_{-1}, s_{-m}]$
 
 In practise, M3 is a good choice.
+
+## OWL-QN
+When we try to apply L1 [regularization](https://en.wikipedia.org/wiki/Regularization_(mathematics)) on the objective function, it becomes non differentiable, at the n points $x_i$ = 0.
+
+OWL-QN method constructs the *pseudo derivative* of the objective function:
+
+$$
+\begin{equation}
+\diamond_i f(x) = 
+\left\{
+\begin{aligned}
+\overset{.}
+\partial_i^-f(x), if  \partial_i^-f(x) > 0 \\
+\partial_i^+f(x), if  \partial_i^+f(x) < 0 \\
+0, otherwise
+\end{aligned}
+\right.
+\end{equation}
+$$
+<div align="right">(8)</div>
+
+please note that the objective function is convex, so there is only 3 conditions for the non differentiable point. The definition of (8) describs all the three conditions.
+
+<center>![owl-qn](/blogs/img/2016-10-18-owl-qn.png)</center>
+
