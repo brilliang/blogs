@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="utf-8">
-<title>2016-10-13-quasi-newton-method</title>
+<title>2016-10-18-Convex-Optimisation-in-Spark-Logistic-Regression</title>
 
 
 <style type="text/css">
@@ -553,49 +553,61 @@ div.prism-show-language > div.prism-show-language-label {
 
 <body>
 
-<h1 id="toc_0">quasi-Newton method</h1>
+<h1 id="toc_0">Convex Optimisation in Spark Logistic Regression</h1>
 
-<p>I am trying to understand all the detail in spark LogisticRegression, which applys different kinds of quasi-Newton methods for optimisaztion. In this article I will record what I have learnt about it.</p>
+<p><a href="https://github.com/scalanlp/breeze">breeze</a> provides the convex optimisation methods for Spark. </p>
 
-<h2 id="toc_1">Newton method</h2>
+<p>When regParamL1 == 0, spark LR uses BreezeLBFGS, which implements <a href="https://en.wikipedia.org/wiki/Limited-memory_BFGS">L-BFGS</a> algorithm, otherwise, BreezeOWLQN is applied, which implements <a href="http://research.microsoft.com/en-us/um/people/jfgao/paper/icml07scalable.pdf">OWLQN</a>.</p>
 
-<p>All stories come from the <a href="https://en.wikipedia.org/wiki/Taylor%27s_theorem">Taylor Expansion </a>. Let&#39;s assume \(f: R^n \rightarrow R \), is convex and 二阶可导</p>
+<p>I am going to explain my understanding about those optimisation algorithms. and then I will show how they are intergrated inside spark LR.  </p>
 
-<p>\( f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}*(x - x_k)^T H(x_k) (x - x_k) \) 
+<p>Define the objective function as: \( f(x): R^n \rightarrow R \), and is convex and 2nd order differentiable.</p>
+
+<h1 id="toc_1"><a href="https://en.wikipedia.org/wiki/Gradient_descent">gradient descent</a></h1>
+
+<p>The gradient shows the fastest decrease direction for the function \(f\). So we can always update x as:</p>
+
+<p>\( x_{k+1} = x_k - \lambda  \nabla f\)</p>
+
+<p>(I will talk about the step length \(\lambda\) in next article.)</p>
+
+<h1 id="toc_2"><a href="https://en.wikipedia.org/wiki/Newton%27s_method">Newton&#39;s Method</a></h1>
+
+<p>If \(f\) is convex and differentiable, at the mininal value point x, it must be \( \nabla f(x) = 0\). So the problem changes to solving this equation. We write the Taylor expansion around \(x_k\):</p>
+
+<p>\(f(x) = f(x_k)+ \nabla f(x_k) (x- x_k) + \frac{1}{2} (x-x_k)^T H(x_k) (x-x_k)\)
 <div align="right">(1)</div></p>
 
-<p>H is the <a href="https://en.wikipedia.org/wiki/Hessian_matrix">hessian matrix</a> of function \( f \):</p>
+<p>taking the derivative of the above function:</p>
 
-<p>\( H(x) = [\frac{\partial ^2f}{\partial x_i \partial y_j}]_{m*n} \)</p>
+<p>\(\nabla f(x) =\nabla f(x_k) + H(x_k)(x-x_k) = 0\)
+<div align="right">(2)</div></p>
 
-<p><strong>SYMBOL</strong> \( f_k = f(x_k); g_k = \nabla f(x_k); H_k = H(x_k);\)</p>
+<p>solving it we can get:</p>
 
-<p>for given \( x_k \), all the 3 values are constant.</p>
-
-<hr>
-
-<p>only if \( \nabla f(x)  = 0\), the f(x) is the mininum value.</p>
-
-<p>taking the derivative of (1), we can get:</p>
-
-<p>\( \nabla f(x) = g_k + H_k (x-x_k) = 0\)
-<div align="right">(2)</div>
-after expanding it, we can get </p>
-
-<p>\( x_{k+1} =  x_k - H_k^{-1}* g_k\)
+<p>\(x=x_k - H(x_k)^{-1} \nabla f(x_k)\)
 <div align="right">(3)</div></p>
 
-<h2 id="toc_2">gradient descent</h2>
+<h2 id="toc_3">Algorithm:</h2>
 
-<p>For comparison, I list the method of gradient descent here:</p>
+<ol>
+<li>get the analytical form of gradient and hessian matrix of \(f\)</li>
+<li>initial \(x_0\), set \(k=0\)</li>
+<li>calculate \(g_k = \nabla f(x_k)\), if \(||g_k|| \leq \varepsilon_1\), return \(x = x_k\)</li>
+<li>calculate \(H_x = H(x_k)\) and its inverse \(H_k^{-1}\)</li>
+<li>calculate \(p_k\) from  \(p_k = -H_k^{-1}g_k\)</li>
+<li>linear search for step length \(\lambda\):  \( argmin _ \lambda f(x_k + \lambda p_k) \)</li>
+<li>update \(x_{k+1} = x_k + \lambda p_k, k = k + 1\); </li>
+<li>if \(|| f(x_{k+1}) - f(x_k)|| \leq \varepsilon_2\), return \(x = x_{k+1}\), else goto step 3</li>
+</ol>
 
-<p>\( x_{k+1} = x_k - \lambda g_k\)</p>
+<h2 id="toc_4">properties of Hessian matrix</h2>
 
-<p>the theory under it is that the negative gradient shows the direction where the value of f descents fastest.</p>
+<p>Even we can get the analytical form of the inverse of Hession matrix, we have to apply n^2 function evaluation. For LR, every function evaluation should involve all the training data. So it is impossible to directly use the Newton&#39;s method.</p>
 
-<h2 id="toc_3">if hessian matrix is <a href="https://en.wikipedia.org/wiki/Positive-definite_matrix">positive definite</a></h2>
+<h3 id="toc_5">hessian matrix is <a href="https://en.wikipedia.org/wiki/Positive-definite_matrix">positive definite</a></h3>
 
-<p>Compare Newton method to gradient descent method, it is easy to see that we are using the the \( -H(x_k) \) as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.</p>
+<p>when (3) is applied to update \(x\), funciont \(f\) always decreases, If the hessian matrix is positive definite.</p>
 
 <p>if we substitue x with (3), into (1), and ignore second order item, we can get:</p>
 
@@ -603,70 +615,85 @@ after expanding it, we can get </p>
 
 <p>then we get the result: if the hessian matrix is positive definite, which means \(  g_k^T * H_k^{-1} * g_k &gt; 0 \), then f(x) will go the descent direction.</p>
 
-<h2 id="toc_4">quasi-Newton condition</h2>
+<h3 id="toc_6"><a href="https://en.wikipedia.org/wiki/Secant_method">Secant Condition</a></h3>
 
 <p>From (2), it is easy to get \( g_{k+1} - g_k = H_k * (x_{k+1} - x_k)\)</p>
 
-<p><strong>SYMBOL</strong>: \( y_k=g_{k+1} - g_k;  \delta_k= x_{k+1} - x_k \)</p>
+<p><strong>SYMBOL</strong>: \( s_k= x_{k+1} - x_k; y_k=g_{k+1} - g_k;  \)</p>
 
 <p>so the quasi-Newton condition is defined as:</p>
 
-<p>\( y_k = \delta_k H_k\)
-<div align="right">(4)</div>
-or,  \( H_k^{-1}  y_k = \delta_k\)
+<p>\( y_k = s_k H_k\)
+<div align="right">(4)</div>or</p>
+
+<p>\( H_k^{-1}  y_k = s_k\)
 <div align="right">(5)</div></p>
 
-<hr>
+<h1 id="toc_7">Quasi-Newton method</h1>
 
-<h1 id="toc_5">quasi-Newton method</h1>
+<p>Subject to the most 2 important properties of Hessian matrix, we can find something to approximate it. The key point is to calculate it <em>iteratively</em>.</p>
 
-<p>\( H^{-1}\) is not easy to get. So we are trying to find a matrix to subsitute B and is easier to calculate. In every iteration of calculation, it is subject to the quasi-Newton condition.</p>
+<h2 id="toc_8">DFP</h2>
 
-<h2 id="toc_6">DFP</h2>
+<p>it gives a iterative method to calculate Hessian matrix.</p>
 
-<p>\( G_{k+1} = G_k + P_k + Q_k\)</p>
+<p>\(H_{k+1} = U_k^TH_kU_k + \rho_ky_ky_k^T\)</p>
 
-<p>We are going to choose P and Q to make both \( G_{k+1} \) and \( G_k \) subject to the quasi-Newton condition. Tricky to set \( P_k y_k = \delta _k;  Q_k y_k = -G_k y_k \), we can get </p>
+<p>where \(\rho_k = \frac{1}{y_k^T s_K}\), and \(U_k=I-\rho_k y_k y_k^T\)</p>
 
-<p>\( G_{k+1} y_k = G_k y_k + P_k y_k + Q_k y_k = \delta _k\)</p>
+<h2 id="toc_9">BFGS</h2>
 
-<p>so we can get one sulotion:</p>
+<p>it gives a iterative method to calculate the <strong>inverse</strong> of Hessian matrix. And the theory is so beautiful that <span style="color:red;">it is symmetric between DFP and BFGS: they are identical except that y and s have been reversed.</span></p>
 
-<p>\( P_k = \frac{\delta _k \delta_k ^T}{\delta _k ^T y_k}; Q_k = - \frac{G_k y_k y_k^T G_k}{y_k^T G_k y_k}\)</p>
+<p>NOTE: we are still using the symbol \(H\), but it represents the inverse of Hessian matrix.</p>
 
-<p>if the initial G is positive definite, then all G in iteration is positive definite.</p>
+<p>\(H_{k+1} = V_k^T H_k V_k + \rho_k s_k s_k^T\)
+<div align="right">(6)</div></p>
 
-<h2 id="toc_7">BFGS</h2>
+<p>where \(V_k = I - \rho_k s_k s_k^T\), and \(\rho_k\) is still the inverse of the dot product of \(s_k\) and \(y_k\)</p>
 
-<p>if we consider the quasi-Newton condition in the persipective of hessian matrix, rather than its reverse:\( H_k \delta_k = y_k \)</p>
+<h2 id="toc_10">L-BFGS</h2>
 
-<p>We can try to find a matrix B to approximate H. Using the same method as DFP, \( B_{k+1} = B_k + P_k + Q_k \)</p>
+<p>DFP and BFGS need store the matrix of previous iteration, it cost \(\frac{1}{2} n*(n+1)\) storage since the matrix is symmetric. It became huge when n continuely increases.</p>
 
-<p>Tricky to set \( P_k \delta _k = y_k ;  Q_k \delta _k = -B_k \delta _k \), we can get</p>
+<p>L-BFGS approximates it using the previous \(m\) iteration&#39;s \(s\) and \(y\), so that the storage could be reduced to m*n. </p>
 
-<p>\( B_{k+1} \delta_k = B_k \delta_k+ P_k \delta_k+ Q_k \delta_k = y_k\)</p>
+<p>But the most beautiful part of L-BFGS is that the \(H_k^{-1}g_k\) is computed  as a whole. The algorithm is designed by <span style="color:red;">GENIUS</span> . </p>
 
-<p>solution of P and Q is 
-\( P_k = \frac{y_k y_k^T}{y_k^T \delta_k}, Q_k=-\frac{B_k \delta_k \delta_k^T B_k}{\delta _k^T  B_k \delta _k} \)</p>
+<p>It is quiet simple to expand formula (6), using \(H_{k-1}\) to represents \(H_k\), and so on:</p>
 
-<p>if the initial G is positive definite, then all G in iteration is positive definite.</p>
+<p>\( H_K = (V_{-1}^TV_{-2}^T...V_{-m}^T) H_{-m}(V_{-m}...V_{-2}V_{-1}) \)</p>
 
-<h3 id="toc_8">Algorithm:</h3>
+<p>\( + (V_{-1}^TV_{-2}^T...V_{-m+1}^T) s_{-m} \rho_{-m} s_{-m}(V_{-m+1}...V_{-2}V_{-1})\)</p>
 
-<ol>
-<li>initial \(x_0\), choose a positive definite matrix \(B_0, k=0\)</li>
-<li>calculate \(g_k = \nabla f(x_k)\), if \(||g_k|| \leq \epsilon\), return \(x = x_k\)</li>
-<li>calculate \(p_k\) from  \(B_k p_k = g_k\)</li>
-<li>linear search for step length \(\lambda\):  \( argmin _ \lambda f(x_k + \lambda p_k) \)</li>
-<li>update \(x_{k+1} = x_k + \lambda p_k, k = k + 1\), goto step 2.</li>
-</ol>
+<p>\( + (V_{-1}^TV_{-2}^T...V_{-m+2}^T) s_{-m+1} \rho_{-m+1} s_{-m+1}(V_{-m+2}...V_{-2}V_{-1})\)</p>
 
-<h2 id="toc_9">Broyden Algorithm</h2>
+<p>\( + V_{-1}^T s_{-2} \rho_{-2} s_{-2} V_{-1}\)</p>
 
-<p>by applying Sherman-Morrison formula twice, we can get another approximation of \(H^{-1}\).
-we can linear combination the tow approximations of \(H^{-1}\):</p>
+<p>\( + s_{-1} \rho_{-1} s_{-1} \)
+<div align="right">(7)</div></p>
 
-<p>\(G_{k+1} = \alpha G^{DFP} + (1 - \alpha) G^{BFGS}\)</p>
+<h3 id="toc_11">Algorithm</h3>
+
+<p><center><img src="/blogs/img/2016-10-18%20lbfgs.png" alt="Algorithm"></center></p>
+
+<p>try to be a GENIUS to understand how this algorithm implement the formula (7).</p>
+
+<h3 id="toc_12">\(H_{-m}\)</h3>
+
+<p>Setting \(H_{-m}\) is called scaling the L-BFGS method. I only find some discussion about it in this paper: <a href="http://users.iems.northwestern.edu/%7Enocedal/PDFfiles/limited-memory.pdf">ON THE LIMITED MEMORY BFGS METHOD FOR LARGE SCALE OPTIMIZATION</a>. Subject to Secant Condition, following methods can be tried:</p>
+
+<ul>
+<li>M1: \(H_{-m} = H_0 = I\) (no scaling)</li>
+<li>M2: \(H_{-m} = \gamma_0 H_0\) (only initial scaling)</li>
+<li>M3: \(H_{-m} = \gamma_k H_0\) $</li>
+<li>M4: for \(k \leq m\), the same as M3; for \(k &gt; m\), \(H_{-m} = argmin  ||H_{-m}Y_{-m-1} - S_{-m-1}||_F\); </li>
+</ul>
+
+<p>where \(||.||_F\) is Frobenius norm; 
+Y is the matrix \([y_{-1}, y_{-m}]\); S is the matrix \([s_{-1}, s_{-m}]\)</p>
+
+<p>In practise, M3 is a good choice.</p>
 
 
 

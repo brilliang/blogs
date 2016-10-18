@@ -1,11 +1,16 @@
-#quasi-Newton method 
+# <del>quasi-Newton method</del>
 
-I am trying to understand all the detail in spark LogisticRegression, which applys different kinds of quasi-Newton methods for optimisaztion. In this article I will record what I have learnt about it.
+This article records my reading notes of <统计学习方法>, but I found many mistakes after finished reading something else. So please ignore this one and read my next blog.
 
-## Newton method
+
+---
+
+I am trying to understand all the detail in spark LogisticRegression, which applys different kinds of [quasi-Newton](https://en.wikipedia.org/wiki/Quasi-Newton_method) methods for optimisaztion. In this article I will record what I have learnt about it.
+
+## [Newton method](https://en.wikipedia.org/wiki/Newton%27s_method_in_optimization)
 All stories come from the [Taylor Expansion ](https://en.wikipedia.org/wiki/Taylor%27s_theorem). Let's assume $f: R^n \rightarrow R $, is convex and 二阶可导
 
-$ f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}*(x - x_k)^T H(x_k) (x - x_k) $ 
+$ f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}(x - x_k)^T H(x_k) (x - x_k) $ 
 <div align="right">(1)</div>
 
 H is the [hessian matrix](https://en.wikipedia.org/wiki/Hessian_matrix) of function $ f $:
@@ -29,6 +34,7 @@ after expanding it, we can get
 $ x_{k+1} =  x_k - H_k^{-1}* g_k$
 <div align="right">(3)</div>
 
+> In my understanding, it is just applying [Newton Method](https://en.wikipedia.org/wiki/Newton%27s_method) to solve the equation g(x) = 0
 
 ## gradient descent
 For comparison, I list the method of gradient descent here:
@@ -38,7 +44,7 @@ $ x_{k+1} = x_k - \lambda g_k$
 the theory under it is that the negative gradient shows the direction where the value of f descents fastest.
 
 ## if hessian matrix is [positive definite](https://en.wikipedia.org/wiki/Positive-definite_matrix)
-Compare Newton method to gradient descent method, it is easy to see that we are using the the $ -H(x_k) $ as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.
+Compare Newton method to gradient descent method, it is easy to see that we are still using the the $ g_x $ as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.
 
 if we substitue x with (3), into (1), and ignore second order item, we can get:
 
@@ -46,7 +52,7 @@ $ f(x) = f_k - g_k^T * H_k^{-1} * g_k$
 
 then we get the result: if the hessian matrix is positive definite, which means $  g_k^T * H_k^{-1} * g_k > 0 $, then f(x) will go the descent direction.
 
-## quasi-Newton condition
+## Secant Equation
 From (2), it is easy to get $ g_{k+1} - g_k = H_k * (x_{k+1} - x_k)$
 
 **SYMBOL**: $ y_k=g_{k+1} - g_k;  \delta_k= x_{k+1} - x_k $
