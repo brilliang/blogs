@@ -127,6 +127,9 @@ Setting $H_{-m}$ is called scaling the L-BFGS method. I only find some discussio
 * M1: $H_{-m} = H_0 = I$ (no scaling)
 * M2: $H_{-m} = \gamma_0 H_0$ (only initial scaling)
 * M3: $H_{-m} = \gamma_k H_0$ $
+
+where $\gamma _k = y_k^T s_k / ||y_k||^2$
+
 * M4: for $k \leq m$, the same as M3; for $k > m$, $H_{-m} = argmin  ||H_{-m}Y_{-m-1} - S_{-m-1}||_F$; 
 
 where $||.||_F$ is Frobenius norm; 
