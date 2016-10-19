@@ -573,7 +573,7 @@ div.prism-show-language > div.prism-show-language-label {
 
 <h1 id="toc_2"><a href="https://en.wikipedia.org/wiki/Newton%27s_method">Newton&#39;s Method</a></h1>
 
-<p>If \(f\) is convex and differentiable, at the mininal value point x, it must be \( \nabla f(x) = 0\). So the problem changes to solving this equation. We write the Taylor expansion around \(x_k\):</p>
+<p>If \(f\) is convex and differentiable, at the mininal value point x, it must be \( \nabla f(x) = 0\). So the problem changes to solving this equation. We write the Taylor expansion around a given point \(x_k\):</p>
 
 <p>\(f(x) = f(x_k)+ \nabla f(x_k) (x- x_k) + \frac{1}{2} (x-x_k)^T H(x_k) (x-x_k)\)
 <div align="right">(1)</div></p>
@@ -585,7 +585,7 @@ div.prism-show-language > div.prism-show-language-label {
 
 <p>solving it we can get:</p>
 
-<p>\(x=x_k - H(x_k)^{-1} \nabla f(x_k)\)
+<p>\(x_{k+1}=x_k - H(x_k)^{-1} \nabla f(x_k)\)
 <div align="right">(3)</div></p>
 
 <h2 id="toc_3">Algorithm:</h2>
@@ -611,7 +611,7 @@ div.prism-show-language > div.prism-show-language-label {
 
 <p>if we substitue x with (3), into (1), and ignore second order item, we can get:</p>
 
-<p>\( f(x) = f_k - g_k^T * H_k^{-1} * g_k\)</p>
+<p>\( f(x_{k+1}) = f_k - g_k^T * H_k^{-1} * g_k\)</p>
 
 <p>then we get the result: if the hessian matrix is positive definite, which means \(  g_k^T * H_k^{-1} * g_k &gt; 0 \), then f(x) will go the descent direction.</p>
 
@@ -724,6 +724,16 @@ Y is the matrix \([y_{-1}, y_{-m}]\); S is the matrix \([s_{-1}, s_{-m}]\)</p>
 <p>please note that the objective function is convex, so there is only 3 conditions for the non differentiable point. The definition of (8) describs all the three conditions.</p>
 
 <p><center><img src="/blogs/img/2016-10-18-owl-qn.png" alt="owl-qn"></center></p>
+
+<p>reference:</p>
+
+<ul>
+<li><a href="http://www.tianyancha.com/research/LR_intro.pdf">Logistic Regression：入门到精通</a></li>
+<li><a href="http://users.iems.northwestern.edu/%7Enocedal/PDFfiles/limited-memory.pdf">ON THE LIMITED MEMORY BFGS METHOD FOR LARGE SCALE OPTIMIZATION</a></li>
+<li><a href="https://homes.cs.washington.edu/%7Egalen/files/quasi-newton-notes.pdf">Overview of Quasi-Newton optimization methods</a></li>
+<li><a href="http://www.ii.uib.no/%7Elennart/drgrad/Nocedal1980.pdf">Updating Quasi-Newton Matrices with Limited Storage</a></li>
+<li><a href="http://papers.nips.cc/paper/5333-large-scale-l-bfgs-using-mapreduce.pdf">Large-scale L-BFGS using MapReduce</a></li>
+</ul>
 
 
 

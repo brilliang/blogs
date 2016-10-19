@@ -16,7 +16,7 @@ $ x_{k+1} = x_k - \lambda  \nabla f$
 (I will talk about the step length $\lambda$ in next article.)
 
 # [Newton's Method](https://en.wikipedia.org/wiki/Newton%27s_method)
-If $f$ is convex and differentiable, at the mininal value point x, it must be $ \nabla f(x) = 0$. So the problem changes to solving this equation. We write the Taylor expansion around $x_k$:
+If $f$ is convex and differentiable, at the mininal value point x, it must be $ \nabla f(x) = 0$. So the problem changes to solving this equation. We write the Taylor expansion around a given point $x_k$:
 
 $f(x) = f(x_k)+ \nabla f(x_k) (x- x_k) + \frac{1}{2} (x-x_k)^T H(x_k) (x-x_k)$
 <div align="right">(1)</div>
@@ -28,7 +28,7 @@ $\nabla f(x) =\nabla f(x_k) + H(x_k)(x-x_k) = 0$
 
 solving it we can get:
 
-$x=x_k - H(x_k)^{-1} \nabla f(x_k)$
+$x_{k+1}=x_k - H(x_k)^{-1} \nabla f(x_k)$
 <div align="right">(3)</div>
 
 
@@ -56,7 +56,7 @@ when (3) is applied to update $x$, funciont $f$ always decreases, If the hessian
 
 if we substitue x with (3), into (1), and ignore second order item, we can get:
 
-$ f(x) = f_k - g_k^T * H_k^{-1} * g_k$
+$ f(x_{k+1}) = f_k - g_k^T * H_k^{-1} * g_k$
 
 then we get the result: if the hessian matrix is positive definite, which means $  g_k^T * H_k^{-1} * g_k > 0 $, then f(x) will go the descent direction.
 
