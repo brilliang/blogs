@@ -1,9 +1,4 @@
----
-layout: researcher
-title: parallel your linux jobs
-tags: linux, parallel
----
-# {{ page.title }}
+# parallel your linux jobs
 
 Linux tools have so beautiful abstraction of your daily work, that would not be easy to ignore them totally and to change to python or other script languages.
 

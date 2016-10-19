@@ -1,9 +1,3 @@
----
-layout: researcher
-title: SOURCE CODE READING, SPARK, LogisticRegression
-tags: source code reading,spark,logisticregression
----
-
 # SPARK, Logistic Regression
 (version 2.0.0)
 
