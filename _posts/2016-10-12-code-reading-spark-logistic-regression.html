@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="utf-8">
-<title>2016-10-13-quasi-newton-method</title>
+<title>2016-10-12-code-reading-spark-logistic-regression</title>
 
 
 <style type="text/css">
@@ -553,125 +553,125 @@ div.prism-show-language > div.prism-show-language-label {
 
 <body>
 
-<h1 id="toc_0">quasi-Newton method</h1>
+<h1 id="toc_0">SPARK, Logistic Regression</h1>
 
-<p>I am trying to understand all the detail in spark LogisticRegression, which applys different kinds of quasi-Newton methods for optimisaztion. In this article I will record what I have learnt about it.</p>
+<p>(version 2.0.0)</p>
 
-<h2 id="toc_1">Newton method</h2>
+<p>With spark, it would be very easy to build up the data pipeline of data preparing and modeling.</p>
 
-<p>All stories come from the <a href="https://en.wikipedia.org/wiki/Taylor%27s_theorem">Taylor Expansion </a>. Let&#39;s assume \(f: R^n \rightarrow R \), is convex and 二阶可导</p>
+<p>If you want to use spark to train a Logistic Regression model, just build a dataframe with two columns named &#39;label&#39; and &#39;features&#39;. the &#39;label&#39; column is Double type, and the &#39;feature&#39; column is Vector type with double value elements.</p>
 
-<p>\( f(x) = f(x_k) + \nabla f(x_k)^T (x - x_k) + \frac{1}{2}*(x - x_k)^T H(x_k) (x - x_k) \) 
-<div align="right">(1)</div></p>
+<p>It is recommended to go through the official document of <a href="http://spark.apache.org/docs/latest/ml-guide.html">Spark Machine Learning Library (MLlib) Guide</a>.</p>
 
-<p>H is the <a href="https://en.wikipedia.org/wiki/Hessian_matrix">hessian matrix</a> of function \( f \):</p>
+<p>Now I am going to record something I get from reading the source code of org.apache.spark.ml.classification.LogisticRegression</p>
 
-<p>\( H(x) = [\frac{\partial ^2f}{\partial x_i \partial y_j}]_{m*n} \)</p>
+<h2 id="toc_1">parameters</h2>
 
-<p><strong>SYMBOL</strong> \( f_k = f(x_k); g_k = \nabla f(x_k); H_k = H(x_k);\)</p>
+<p>Unlike <a href="http://www.csie.ntu.edu.tw/%7Ecjlin/liblinear/">liblinear</a>, which applies &#39;trust region method&#39; and involves more parameter setting, Spark Logistic Regression uses the L-BFGS as the optimisation method and needs simple and straightforward parameter setting.</p>
 
-<p>for given \( x_k \), all the 3 values are constant.</p>
+<h3 id="toc_2">regularization</h3>
 
-<hr>
+<div><pre class="line-numbers"><code class="language-scala">        val regParamL1 = $(elasticNetParam) * $(regParam)
+        val regParamL2 = (1.0 - $(elasticNetParam)) * $(regParam)</code></pre></div>
 
-<p>only if \( \nabla f(x)  = 0\), the f(x) is the mininum value.</p>
+<p>Inside Spark, the regularization parameters are set using the code above. Therefore you have to set the next two parameters to control the regularization.</p>
 
-<p>taking the derivative of (1), we can get:</p>
+<div><pre class="line-numbers"><code class="language-scala">setRegParam
+setElasticNetParam</code></pre></div>
 
-<p>\( \nabla f(x) = g_k + H_k (x-x_k) = 0\)
-<div align="right">(2)</div>
-after expanding it, we can get </p>
+<h3 id="toc_3">iterate</h3>
 
-<p>\( x_{k+1} =  x_k - H_k^{-1}* g_k\)
-<div align="right">(3)</div></p>
+<div><pre class="line-numbers"><code class="language-scala">setMaxIter
+setTol</code></pre></div>
 
-<h2 id="toc_2">gradient descent</h2>
+<p>If the data is convergence, then smaller convergence tolerance needs bigger number of iterations.</p>
 
-<p>For comparison, I list the method of gradient descent here:</p>
+<h3 id="toc_4">intercept</h3>
 
-<p>\( x_{k+1} = x_k - \lambda g_k\)</p>
+<div><pre class="line-numbers"><code class="language-scala">setFitIntercept</code></pre></div>
 
-<p>the theory under it is that the negative gradient shows the direction where the value of f descents fastest.</p>
+<p>if you set it false, it means the intercept will be set as zero:</p>
 
-<h2 id="toc_3">if hessian matrix is <a href="https://en.wikipedia.org/wiki/Positive-definite_matrix">positive definite</a></h2>
+<div><pre class="line-numbers"><code class="language-scala">        if ($(fitIntercept)) {
+          (Vectors.dense(rawCoefficients.dropRight(1)).compressed, rawCoefficients.last,
+            arrayBuilder.result())
+        } else {
+          (Vectors.dense(rawCoefficients).compressed, 0.0, arrayBuilder.result())
+        }</code></pre></div>
 
-<p>Compare Newton method to gradient descent method, it is easy to see that we are using the the \( -H(x_k) \) as the optimisation direction. The point is, if the hessian matrix is positive definite, then this direction is always points to descent.</p>
+<p>The code above returns a tunple of (coefficients, intercept, history info).</p>
 
-<p>if we substitue x with (3), into (1), and ignore second order item, we can get:</p>
+<h2 id="toc_5">train</h2>
 
-<p>\( f(x) = f_k - g_k^T * H_k^{-1} * g_k\)</p>
+<p>LogisticRegression extends from Predictor, which extends from Estimator.  The most important interface function of Estimator is fit(). Estimator overrides and implements it as follow:</p>
 
-<p>then we get the result: if the hessian matrix is positive definite, which means \(  g_k^T * H_k^{-1} * g_k &gt; 0 \), then f(x) will go the descent direction.</p>
+<div><pre class="line-numbers"><code class="language-scala">  override def fit(dataset: Dataset[_]): M = {
+    // This handles a few items such as schema validation.
+    // Developers only need to implement train().
+    transformSchema(dataset.schema, logging = true)
+    copyValues(train(dataset).setParent(this))
+  }</code></pre></div>
 
-<h2 id="toc_4">quasi-Newton condition</h2>
+<p>So, I am going to explain train() of LogisticRegression step by step:</p>
 
-<p>From (2), it is easy to get \( g_{k+1} - g_k = H_k * (x_{k+1} - x_k)\)</p>
+<ul>
+<li>select 3 columns of &#39;lable&#39;, &#39;instance weight&#39; and &#39;features&#39; to construct a RDD[Instance] and persist it only when origin dataset&#39;s storageLevel is NONE</li>
+</ul>
 
-<p><strong>SYMBOL</strong>: \( y_k=g_{k+1} - g_k;  \delta_k= x_{k+1} - x_k \)</p>
+<div><pre class="line-numbers"><code class="language-scala">val handlePersistence = dataset.rdd.getStorageLevel == StorageLevel.NONE
+...
+if (handlePersistence) instances.persist(StorageLevel.MEMORY_AND_DISK)</code></pre></div>
 
-<p>so the quasi-Newton condition is defined as:</p>
+<p>Hence, the speed of training will be <strong>faster</strong> if not to persist the original dataset. </p>
 
-<p>\( y_k = \delta_k H_k\)
-<div align="right">(4)</div>
-or,  \( H_k^{-1}  y_k = \delta_k\)
-<div align="right">(5)</div></p>
+<ul>
+<li>use two summarizers to get statistics of samples&#39;s label and features. and then check whether it is a binary classification problem and if there is anything wrong about the labels, e.g. all samples have the only one label. It is very important to check logs here when you get some strange train result.</li>
+</ul>
 
-<hr>
+<div><pre class="line-numbers"><code class="language-scala">val (summarizer, labelSummarizer) = {
+...
+}</code></pre></div>
 
-<h1 id="toc_5">quasi-Newton method</h1>
+<ul>
+<li>get regularization parameters</li>
+<li>construct LogisticCostFun, BreezeLBFGS or BreezeOWLQN (if regParamL1 != 0) as optimizer, initial coefficients and intercept</li>
+</ul>
 
-<p>\( H^{-1}\) is not easy to get. So we are trying to find a matrix to subsitute B and is easier to calculate. In every iteration of calculation, it is subject to the quasi-Newton condition.</p>
+<blockquote>
+<p>For binary logistic regression, when we initialize the coefficients as zeros, it will converge faster if we initialize the intercept such that it follows the distribution of the labels.</p>
+</blockquote>
 
-<h2 id="toc_6">DFP</h2>
+<ul>
+<li>optimise for the solution:</li>
+</ul>
 
-<p>\( G_{k+1} = G_k + P_k + Q_k\)</p>
+<div><pre class="line-numbers"><code class="language-scala">val states = optimizer.iterations(new CachedDiffFunction(costFun),
+          initialCoefficientsWithIntercept.asBreeze.toDenseVector)</code></pre></div>
 
-<p>We are going to choose P and Q to make both \( G_{k+1} \) and \( G_k \) subject to the quasi-Newton condition. Tricky to set \( P_k y_k = \delta _k;  Q_k y_k = -G_k y_k \), we can get </p>
+<ul>
+<li>finally, check the <em>state</em> of each optimise iteration. when iteration ends, log warning if it is not actually converged. extract (coefficients, intercept, history info).</li>
+<li>constrcut LogisticRegressionModel using the optimise iteration result. </li>
+<li>construct BinaryLogisticRegressionTrainingSummary by applying the new model on training data; this summary contains ROC, AUC, precision, and recall rate, etc.</li>
+</ul>
 
-<p>\( G_{k+1} y_k = G_k y_k + P_k y_k + Q_k y_k = \delta _k\)</p>
-
-<p>so we can get one sulotion:</p>
-
-<p>\( P_k = \frac{\delta _k \delta_k ^T}{\delta _k ^T y_k}; Q_k = - \frac{G_k y_k y_k^T G_k}{y_k^T G_k y_k}\)</p>
-
-<p>if the initial G is positive definite, then all G in iteration is positive definite.</p>
-
-<h2 id="toc_7">BFGS</h2>
-
-<p>if we consider the quasi-Newton condition in the persipective of hessian matrix, rather than its reverse:\( H_k \delta_k = y_k \)</p>
-
-<p>We can try to find a matrix B to approximate H. Using the same method as DFP, \( B_{k+1} = B_k + P_k + Q_k \)</p>
-
-<p>Tricky to set \( P_k \delta _k = y_k ;  Q_k \delta _k = -B_k \delta _k \), we can get</p>
-
-<p>\( B_{k+1} \delta_k = B_k \delta_k+ P_k \delta_k+ Q_k \delta_k = y_k\)</p>
-
-<p>solution of P and Q is 
-\( P_k = \frac{y_k y_k^T}{y_k^T \delta_k}, Q_k=-\frac{B_k \delta_k \delta_k^T B_k}{\delta _k^T  B_k \delta _k} \)</p>
-
-<p>if the initial G is positive definite, then all G in iteration is positive definite.</p>
-
-<h3 id="toc_8">Algorithm:</h3>
-
-<ol>
-<li>initial \(x_0\), choose a positive definite matrix \(B_0, k=0\)</li>
-<li>calculate \(g_k = \nabla f(x_k)\), if \(||g_k|| \leq \epsilon\), return \(x = x_k\)</li>
-<li>calculate \(p_k\) from  \(B_k p_k = g_k\)</li>
-<li>linear search for step length \(\lambda\):  \( argmin _ \lambda f(x_k + \lambda p_k) \)</li>
-<li>update \(x_{k+1} = x_k + \lambda p_k, k = k + 1\), goto step 2.</li>
-</ol>
-
-<h2 id="toc_9">Broyden Algorithm</h2>
-
-<p>by applying Sherman-Morrison formula twice, we can get another approximation of \(H^{-1}\).
-we can linear combination the tow approximations of \(H^{-1}\):</p>
-
-<p>\(G_{k+1} = \alpha G^{DFP} + (1 - \alpha) G^{BFGS}\)</p>
+<p>Next article I am going to talk about the optimiser used in Spark Logistic Regression.</p>
 
 
 
 <script type="text/javascript">
 var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-(\w+)\b/i,t=0,n=_self.Prism={util:{encode:function(e){return e instanceof a?new a(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e){var t=n.util.type(e);switch(t){case"Object":var a={};for(var r in e)e.hasOwnProperty(r)&&(a[r]=n.util.clone(e[r]));return a;case"Array":return e.map&&e.map(function(e){return n.util.clone(e)})}return e}},languages:{extend:function(e,t){var a=n.util.clone(n.languages[e]);for(var r in t)a[r]=t[r];return a},insertBefore:function(e,t,a,r){r=r||n.languages;var l=r[e];if(2==arguments.length){a=arguments[1];for(var i in a)a.hasOwnProperty(i)&&(l[i]=a[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in a)a.hasOwnProperty(i)&&(o[i]=a[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===r[e]&&t!=e&&(this[t]=o)}),r[e]=o},DFS:function(e,t,a,r){r=r||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],a||l),"Object"!==n.util.type(e[l])||r[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||r[n.util.objId(e[l])]||(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,r)):(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,r)))}},plugins:{},highlightAll:function(e,t){var a={callback:t,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var r,l=a.elements||document.querySelectorAll(a.selector),i=0;r=l[i++];)n.highlightElement(r,e===!0,a.callback)},highlightElement:function(t,a,r){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1],i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l);var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(!s||!i)return n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),a&&_self.Worker){var c=new Worker(n.filename);c.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},c.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,r){var l=n.tokenize(e,t);return a.stringify(n.util.encode(l),r)},tokenize:function(e,t){var a=n.Token,r=[e],l=t.rest;if(l){for(var i in l)t[i]=l[i];delete t.rest}e:for(var i in t)if(t.hasOwnProperty(i)&&t[i]){var o=t[i];o="Array"===n.util.type(o)?o:[o];for(var s=0;s<o.length;++s){var u=o[s],c=u.inside,g=!!u.lookbehind,h=!!u.greedy,f=0,d=u.alias;u=u.pattern||u;for(var p=0;p<r.length;p++){var m=r[p];if(r.length>e.length)break e;if(!(m instanceof a)){u.lastIndex=0;var y=u.exec(m),v=1;if(!y&&h&&p!=r.length-1){var b=r[p+1].matchedStr||r[p+1],k=m+b;if(p<r.length-2&&(k+=r[p+2].matchedStr||r[p+2]),u.lastIndex=0,y=u.exec(k),!y)continue;var w=y.index+(g?y[1].length:0);if(w>=m.length)continue;var _=y.index+y[0].length,P=m.length+b.length;if(v=3,P>=_){if(r[p+1].greedy)continue;v=2,k=k.slice(0,P)}m=k}if(y){g&&(f=y[1].length);var w=y.index+f,y=y[0].slice(f),_=w+y.length,S=m.slice(0,w),O=m.slice(_),j=[p,v];S&&j.push(S);var A=new a(i,c?n.tokenize(y,c):y,d,y,h);j.push(A),O&&j.push(O),Array.prototype.splice.apply(r,j)}}}}}return r},hooks:{all:{},add:function(e,t){var a=n.hooks.all;a[e]=a[e]||[],a[e].push(t)},run:function(e,t){var a=n.hooks.all[e];if(a&&a.length)for(var r,l=0;r=a[l++];)r(t)}}},a=n.Token=function(e,t,n,a,r){this.type=e,this.content=t,this.alias=n,this.matchedStr=a||null,this.greedy=!!r};if(a.stringify=function(e,t,r){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return a.stringify(n,t,e)}).join("");var l={type:e.type,content:a.stringify(e.content,t,r),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:r};if("comment"==l.type&&(l.attributes.spellcheck="true"),e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o="";for(var s in l.attributes)o+=(o?" ":"")+s+'="'+(l.attributes[s]||"")+'"';return"<"+l.tag+' class="'+l.classes.join(" ")+'" '+o+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(_self.addEventListener("message",function(e){var t=JSON.parse(e.data),a=t.language,r=t.code,l=t.immediateClose;_self.postMessage(n.highlight(r,n.languages[a],a)),l&&_self.close()},!1),_self.Prism):_self.Prism;var r=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return r&&(n.filename=r.src,document.addEventListener&&!r.hasAttribute("data-manual")&&document.addEventListener("DOMContentLoaded",n.highlightAll)),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+</script>
+
+<script type="text/javascript">
+Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\w\W]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:{pattern:/(["'])(\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[a-z0-9_\.\\]+/i,lookbehind:!0,inside:{punctuation:/(\.|\\)/}},keyword:/\b(if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(true|false)\b/,"function":/[a-z0-9_]+(?=\()/i,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)\b/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
+</script>
+
+<script type="text/javascript">
+Prism.languages.java=Prism.languages.extend("clike",{keyword:/\b(abstract|continue|for|new|switch|assert|default|goto|package|synchronized|boolean|do|if|private|this|break|double|implements|protected|throw|byte|else|import|public|throws|case|enum|instanceof|return|transient|catch|extends|int|short|try|char|final|interface|static|void|class|finally|long|strictfp|volatile|const|float|native|super|while)\b/,number:/\b0b[01]+\b|\b0x[\da-f]*\.?[\da-fp\-]+\b|\b\d*\.?\d+(?:e[+-]?\d+)?[df]?\b/i,operator:{pattern:/(^|[^.])(?:\+[+=]?|-[-=]?|!=?|<<?=?|>>?>?=?|==?|&[&=]?|\|[|=]?|\*=?|\/=?|%=?|\^=?|[?:~])/m,lookbehind:!0}}),Prism.languages.insertBefore("java","function",{annotation:{alias:"punctuation",pattern:/(^|[^.])@\w+/,lookbehind:!0}});
+</script>
+
+<script type="text/javascript">
+Prism.languages.scala=Prism.languages.extend("java",{keyword:/<-|=>|\b(?:abstract|case|catch|class|def|do|else|extends|final|finally|for|forSome|if|implicit|import|lazy|match|new|null|object|override|package|private|protected|return|sealed|self|super|this|throw|trait|try|type|val|var|while|with|yield)\b/,string:/"""[\W\w]*?"""|"(?:[^"\\\r\n]|\\.)*"|'(?:[^\\\r\n']|\\.[^\\']*)'/,builtin:/\b(?:String|Int|Long|Short|Byte|Boolean|Double|Float|Char|Any|AnyRef|AnyVal|Unit|Nothing)\b/,number:/\b(?:0x[\da-f]*\.?[\da-f]+|\d*\.?\d+e?\d*[dfl]?)\b/i,symbol:/'[^\d\s\\]\w*/}),delete Prism.languages.scala["class-name"],delete Prism.languages.scala["function"];
 </script>
 
 <script type="text/javascript">

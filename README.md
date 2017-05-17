@@ -1,2 +1,1 @@
-
-[GNU GPL v3](https://github.com/bk2dcradle/researcher/blob/gh-pages/LICENSE)
+view the blog pages, please kindly click [https://foozhu.github.io/blogs/](https://foozhu.github.io/blogs/)
