@@ -1,0 +1,49 @@
+---
+layout: researcher
+title: simplest and basic git best practise
+---
+
+It is very cheap and recommended to create a new brach any time when you are creating a new feature or just making a hotfix.
+
+<h2>checkout</h2>
+create a new branch: 
+
+{% highlight bash %}
+git checkout -b ${branch_name}
+{% endhighlight %}
+
+or,  create a local branch tracing a remote branch:
+
+{% highlight bash %}
+git checkout ${remote_branch_name}
+{% endhighlight %}
+
+
+<h2>rebase</h2>
+ then you are going to be in the branch. If you are about to stay in the branch a long time, do not forget to rebase the main branch <b>every time</b> when you start to work.
+
+{% highlight bash %}
+ # [in your branch]
+git fetch
+git rebase origin/development
+ 
+ 
+# If you or someone else has pushed into this branch, you also have to rebase those work:
+git rebase origin/${branch_name}
+{% endhighlight %}
+
+<h2>merge back</h2>
+when you finish the work in the branch, it is better to make a <b>pull request</b> and then after the pull request is confirmed, the code would be auto merged by Github.
+Otherwise, you can merge back your code to 'development' yourself when you are quite sure about what you are doing.
+
+{% highlight bash %}
+git checkout development
+git merge ${branch_name}
+git push origin development:development
+{% endhighlight %}
+
+please do not be hurry to delete your branch. It is not late to do it when your code is running totally successful in production.
+
+
+
+
