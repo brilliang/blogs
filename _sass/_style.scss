@@ -18,6 +18,15 @@ a {
     text-decoration: none;
     color: $accent;
 }
+a {
+  color: $blue;
+  text-decoration: none;
+    cursor: pointer;
+  &:hover, &:active {
+    color: $blue;
+  }
+}
+
 a:hover {
     text-decoration: underline;
 }

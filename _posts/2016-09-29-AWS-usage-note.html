@@ -1,0 +1,35 @@
+---
+layout: researcher
+title: notes of AWS usage
+---
+
+<h1>EMR</h1>
+
+<h2>resource calculator for EMR</h2>
+spark in EMR uses Yarn as the resource manager. however the default  resource calculator of Yarn is org.apache.hadoop.yarn.util.resource.DefaultResourseCalculator, which only uses Memory so that it could make the CPU very insufficiently. While DominantResourceCalculator uses Dominant-resource to compare multi-dimensional resources such as Memory, CPU etc., so it could make full use of the whole cluster. if you want your spark job to grab the whole cluster and finish as soon as possible, it is better to configure your emr cluster when you create it. <a href="http://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-configure-apps.html">reference for cluster configuration</a>.
+
+{% highlight xml %}
+[
+    {
+        "Classification": "spark",
+        "Properties": {
+            "maximizeResourceAllocation": "true"
+        }
+    },
+    {
+        "Classification": "capacity-scheduler",
+        "Properties": {
+            "yarn.scheduler.capacity.resource-calculator": "org.apache.hadoop.yarn.util.resource.DominantResourceCalculator"
+        }
+    }
+]
+{% endhighlight %}
+
+you can set this config when you create the emr by aws cli:
+
+{% highlight bash %}
+aws emr create-cluster ...  --configurations file://./aws_emr_cluster_init_conf.json ...
+{% endhighlight %}
+
+<h1>data pipeline</h1>
+It is one of the most stupid thing in AWS. Use Jenkins when you want to depoy and schedule your data jobs.
