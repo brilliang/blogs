@@ -8,11 +8,11 @@ title: substring search
 <p>To find a sub-string in a given string is a very mature algorithm and is provided by all languagues' build-in tools. But it's still fundamental to understand it. </p>
 
 <h1>intuitive method</h1>
-The most intuitive method is to compare the pattern with origin text's charactors one by one. Its time cost should be O(n^2).
+The most intuitive method is to compare the pattern with origin text's characters one by one. Its time cost should be O(n^2).
 
 
 {% highlight python %}
-    def strStr(self, text, pattern):
+    def strStr(text, pattern):
         """
         :type text: str, not None
         :type pattern: str, not None
@@ -46,30 +46,11 @@ The iterator of pattern and origin text are both from 0 to itself's length. When
 
 
 {% highlight python %}
-    def _partial_match(self, pattern):
-    """ the longest preceding substring of pattern which is also at the end of the matched part. """
-        table = [0] * len(pattern)
-        for i in range(1, len(pattern)):
-            for j in range(i - 1, 0, -1):
-                if pattern[:j] == pattern[i - j:i]:
-                    table[i] = j
-                    break
-        return table
-{% endhighlight %}
-
-This table maps from the length of already matched prefix to the length of reusable prefix in the pattern.
-
-{% highlight python %}
-    def strStr(self, text, pattern):
-        """
-        :type text: str
-        :type pattern: str
-        :rtype: int
-        """
+    def strStr(text, pattern):
         if len(pattern) == 0:
             return 0
 
-        table = self._partial_match(pattern)
+        table = _partial_match(pattern)
         i = j = 0
         while i < len(text):
             if text[i] == pattern[j]:
@@ -85,8 +66,100 @@ This table maps from the length of already matched prefix to the length of reusa
         return -1
 {% endhighlight %}
 
-<h2>Boyer-Moore</h2>
+<p>The <i>table</i> is a dict mapping from the length of already matched prefix to the length of reusable prefix in the pattern.</p>
 
+
+{% highlight python %}
+    def _partial_match(pattern):
+    """ the longest preceding substring of pattern which is also at the end of the matched part. """
+        table = [0] * len(pattern)
+        for i in range(1, len(pattern)):
+            for j in range(i - 1, 0, -1):
+                if pattern[:j] == pattern[i - j:i]:
+                    table[i] = j
+                    break
+        return table
+{% endhighlight %}
+
+<h2>Boyer-Moore</h2>
+The iterator of origin text goes from 0 to its length, but the iterator of pattern gose inversely. The matched suffix substring and un-matched character are both used to find out the best position for next comparison.
+
+
+For the un-matched char, we can try to find out the last position of this char and move forward the pattern to align the unmatch one.
+
+{% highlight python %}
+	def _last_pos_unmatched_char(pattern):
+	    d = dict()
+	    for i in range(len(pattern) - 1, -1, -1):
+	        if pattern[i] not in d:
+	            d[pattern[i]] = len(pattern) - 1 - i
+	    return d
+{% endhighlight %}
+
+
+For the matched suffix substring of pattern, we can try to find another appearance of the suffix in pattern.
+
+{% highlight python %}
+	def _prefix_when_suffix_matched(pattern):
+	    rst = dict()
+	    length = len(pattern)
+	    for s in range(1, length):
+	        matched_suffix = pattern[length - s:]
+	        for i in range(length - s - 1, -1, -1):
+	            last_appearance = pattern[i: i + s]
+	            if last_appearance == matched_suffix:
+	                rst[s] = length - i - s
+	                break
+	        else:
+	            rst[s] = length
+	    return rst
+{% endhighlight %}
+
+
+then the search would be simple for these two conditions:
+
+{% highlight python %}
+
+	def strStr(text, pattern):
+	    len_pat = len(pattern)
+	    if len_pat == 0:
+	        return 0
+
+	    len_text = len(text)
+	    if len_text < len_pat:
+	        return -1
+
+	    last_pos = _last_pos_unmatched_char(pattern)
+	    suffix_matched = _prefix_when_suffix_matched(pattern)
+	    i = len_pat - 1
+	    while i < len_text:
+	        # print "i=%d" % i
+	        for j in range(len_pat):
+	            # print "\tj=%d" % j,
+	            if pattern[len_pat - 1 - j] != text[i - j]:
+	                bad_char = text[i - j]
+	                # 在 pattern 中从尾开始找到bad char的位置，将之与text[i - j]对齐
+	                # 然后将 i 后移到 pattern 尾部，下一轮继续从尾到头匹配 pattern
+	                i_bad_char = i - j + last_pos.get(bad_char, len_pat)
+
+	                # 如果有匹配成功的suffix，用这部分已匹配字符串定位 pattern 的前缀所在位置
+	                # 思路同 KMP
+	                if j > 0:
+	                    go_ahead_when_suffix_match = suffix_matched.get(j, -1)
+	                    i_matched_suffix = i + go_ahead_when_suffix_match
+	                else:
+	                    i_matched_suffix = 0
+	                # print "\t\t", i, j, bad_char, pattern[len_pattern - 1 - j],
+	                # print "i_bad_char=%d" % i_bad_char,
+	                # print "i_matched_suffix=%d" % i_matched_suffix
+	                i = max(i_bad_char, i_matched_suffix)
+	                break
+	        else:
+	            return i - (len_pat - 1)
+	    return -1
+
+
+{% endhighlight %}
 
 
 
