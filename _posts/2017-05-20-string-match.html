@@ -1,0 +1,92 @@
+---
+layout: researcher
+title: substring search
+---
+
+<p>温故而知新。</p>
+
+<p>To find a sub-string in a given string is a very mature algorithm and is provided by all languagues' build-in tools. But it's still fundamental to understand it. </p>
+
+<h1>intuitive method</h1>
+The most intuitive method is to compare the pattern with origin text's charactors one by one. Its time cost should be O(n^2).
+
+
+{% highlight python %}
+    def strStr(self, text, pattern):
+        """
+        :type text: str, not None
+        :type pattern: str, not None
+        :rtype: int
+        """
+        len_ori = len(text)
+        len_pat = len(pattern)
+
+        for i in range(len_ori):
+            for j in range(len_pat):
+                if i + j >= len_ori:
+                    return -1
+                elif text[i + j] != pattern[j]:
+                    break
+            else:
+                return i
+{% endhighlight %}
+
+<h1>advanced algorithms</h1>
+There are several advanced algorithms to make it much faster. Even though these algorithms are not quite simple, but all the <b>principle guidelines</b> of them are quite straightforward:
+<ul>
+	<li>never backtracking the iterator of origin text</li>
+	<li>In order to push forward origin text iterator as much as possible, it's necessary to analysis the pattern string to make full use of the already matched part every time doing the comparison.</li>
+</ul>
+
+The following parts will record my understanding about how 'KMP' and 'Boyer-Moore' analysis the pattern string
+
+
+<h2>KMP: Knuth–Morris–Pratt algorithm</h2>
+The iterator of pattern and origin text are both from 0 to itself's length. When a preceding part of pattern is matched with a part of origin text, you can use the matched part to find out next position of iterators, which could be prepared in advance only analysising the pattern. The key is to find out the longest preceding substring of pattern which is also at the end of the matched part. So that the origin text iterator can stay but move forward the pattern to align the position of last comparison.
+
+
+{% highlight python %}
+    def _partial_match(self, pattern):
+    """ the longest preceding substring of pattern which is also at the end of the matched part. """
+        table = [0] * len(pattern)
+        for i in range(1, len(pattern)):
+            for j in range(i - 1, 0, -1):
+                if pattern[:j] == pattern[i - j:i]:
+                    table[i] = j
+                    break
+        return table
+{% endhighlight %}
+
+This table maps from the length of already matched prefix to the length of reusable prefix in the pattern.
+
+{% highlight python %}
+    def strStr(self, text, pattern):
+        """
+        :type text: str
+        :type pattern: str
+        :rtype: int
+        """
+        if len(pattern) == 0:
+            return 0
+
+        table = self._partial_match(pattern)
+        i = j = 0
+        while i < len(text):
+            if text[i] == pattern[j]:
+                i += 1
+                j += 1
+                if j >= len(pattern):
+                    return i - j
+            else: 	# pattern[:j] == text[i:i+j] but pattern[j] != text[i]
+                if j == 0:
+                    i += 1
+                j = table[j]		# j starts from after the re-usable prefix of pattern
+
+        return -1
+{% endhighlight %}
+
+<h2>Boyer-Moore</h2>
+
+
+
+
