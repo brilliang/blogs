@@ -1,0 +1,17 @@
+---
+layout: researcher
+title: principles of spark optimization
+---
+
+<h1>principles of spark optimization</h1>
+
+<p>There are many articles talking about how to tune your Apache Spark cluster and jobs. Some tricks only make it a puzzle. I believe all Spark tuning methods should be based on the understanding of the most fundamental computer architecture. </p>
+
+<p>While choosing a Spark API, I keep in mind of that the computing cost of different operations. In most condition the order of computing cost should be network transmission, disk writing / reading, memery writing / reading, CPU. Every time when I think about if it is possible to choose another optimal operation, I will try to find a way which costs less.</p>
+
+do as much as possible within one computer instance
+do as much as possible within one partition
+avoid create a container every time processing a record
+
+
+pay attention to where the time is consumed, it's still more possible that your code cost too much time processing one record.
