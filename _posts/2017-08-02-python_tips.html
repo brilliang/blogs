@@ -1,0 +1,40 @@
+---
+layout: researcher
+title: tips in python
+---
+
+string object definition in python:
+
+{% highlight python %}
+typedef struct {
+    PyObject_VAR_HEAD
+    long ob_shash;
+    int ob_sstate;
+    char ob_sval[1];
+} PyStringObject;
+
+{% endhighlight %}
+
+there is a array of PyStringObject cached characters in memory, which would shared when you are using a string with 0 or 1 length.
+
+{% highlight python %}
+static PyStringObject *characters[UCHAR_MAX + 1];
+static PyObject *interned;
+{% endhighlight %}
+
+and the field 'ob_sstate' in PyStringObject indicates whether the string in cached by the interned characters cache.
+
+
+{% highlight python %}
+>>> s='a'
+>>> a='a'
+>>> s == a
+True
+>>> id(s) == id(a)
+True
+>>> id('abc'[0]) == id(a)
+True
+>>> t = 'ab'
+>>> id('abc'[:2]) == id(t)
+False
+{% endhighlight %}
