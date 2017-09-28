@@ -3,6 +3,46 @@ layout: researcher
 title: tips in python
 ---
 
+<h1>always using pyenv</h1>
+
+Install <a href="https://github.com/pyenv/pyenv">pyenv</a> <b>BEFORE</b> installing any version of python yourself.
+
+<p>It is simple to make conflict between python versions used by Operation System and your applications and the unconformity between python and pip. Pyenv holds seperated python environments for your login shell, different folders, and all virtual environments you create.</p>
+
+<p>It is easy to install.</p>
+
+<h2>USAGE</h2>
+{% highlight bash %}
+pyenv commands		# list all available commands
+pyenv help		# get help for a command
+pyenv install -l 	# list all available python versions
+pyenv install 3.6.0	# install a specified version of python
+pyenv global 3.6.0	# set a global version of python for current user, value is written to ~/.pyenv/version
+pyenv local 3.6.0	# set a local version of python for current directory, value is written to ./.python-version
+pyenv shell 3.6.0	# set a version of python used in current shell, value is written to a env variable $PYENV_VERSION
+{% endhighlight %}
+
+<p>pyenv tries to read python version from $PYENV_VERSION; if fails, then tries to find the file .python-version from current and parents' folders; if fails again, then tries to read from ~/.pyenv/version. </p>
+
+<h2>virtualenv</h2>
+
+<p>If your application needs a different version of <b>library</b>, then virtualenv should be the best choice.</p>
+
+{% highlight bash %}
+pyenv virtualenvs			# list all available virtualenvs
+pyenv virtualenv [version] env-name	# create a virtualenv. if the version is not specified, then current active version will be used.
+pyenv uninstall env-name		# remove a virtualenv.
+pyenv activate env-name			# active a virtualenv.
+pyenv deactivate			# deactive from current virtualenv.
+{% endhighlight %}
+
+<h2>plugins</h2>
+
+Pycharm and zsh both cooperate well with pyenv.
+
+
+<h1>string object</h1> 
+
 string object definition in python:
 
 {% highlight python %}
