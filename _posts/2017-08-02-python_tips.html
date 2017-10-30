@@ -94,3 +94,23 @@ False
 <br />
 <hr />
 <br />
+
+<h1>some syntactic sugar</h1>
+<h2>break when condition matches in a for loop</h2>
+
+{% highlight python %}
+for i in the_iterable:
+    if condition(i):
+        return i
+{% endhighlight %}
+
+a more pythonic way:
+{% highlight python %}
+next( (x for x in the_iterable if x>3), default_value)
+{% endhighlight %}
+
+
+
+
+
+
