@@ -4,7 +4,7 @@ layout: researcher
 
 ## About Me
 
-I come from China and now works in Singapore. I am a programmer, focus on Computational Advertising, and Recommendation System.
+I am from China and currently working in Singapore.
 
 
 # POSTS
