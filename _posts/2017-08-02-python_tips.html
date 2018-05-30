@@ -91,6 +91,8 @@ True
 >>> id('abc'[:2]) == id(t)
 False
 {% endhighlight %}
+
+
 <br />
 <hr />
 <br />
@@ -108,31 +110,4 @@ a more pythonic way:
 {% highlight python %}
 next( (x for x in the_iterable if x>3), default_value)
 {% endhighlight %}
-
-
-
-<h1>index and slice in Pyhont and Numpy</h1>
-
-from <a href="https://docs.python.org/3/reference/datamodel.html#object.__getitem__">python data model</a> we will know that self[key] is implemented within object.__getitem__(self, key). only one key parameters are required.
-<br />
-
-In pure Python, integer or slice is used to index list. slice here is a build-in object:
-{% highlight python %}
-class slice(start, stop[, step])
-{% endhighlight %}
-<br />
-
-In numpy, we can use a tuple of slice objects and integers to extends Python’s basic concept of slicing to N dimensions, one for each dimension. note: x[(exp1, exp2, ..., expN)] is equivalent to x[exp1, exp2, ..., expN]; the latter is just syntactic sugar for the former.
-
-Ellipsis can be used to express omission for the rest of dimension which will use a default slice object of ':' to index all in those dimensions. If the Ellipsis is at end of selection tuple, itself can be omitted.
-
-{% highlight python %}
->>> x = np.array([[[1],[2],[3]], [[4],[5],[6]]])
->>> # x[1, ...], x[1:2], x[1], are all the same
->>> x[1]
-array([[4],
-       [5],
-       [6]])
-{% endhighlight %}
-
 
