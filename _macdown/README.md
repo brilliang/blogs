@@ -1,1 +1,2 @@
-用Macdown编辑，然后导出成HTML，发布到_posts目录中，是编辑数学公式和代码格式最方便的方法。否则直接在_posts目录中写markdown文件即可。
+用Macdown编辑，然后导出成HTML，发布到_posts目录中，是编辑数学公式和代码格式最方便的方法。
+否则直接在_posts目录中写markdown文件即可。
