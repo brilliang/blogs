@@ -1,8 +1,11 @@
 title: ZHU LIANG
 baseurl: /blogs/
 
-#markdown: kramdown
-#markdown: redcarpet
+highlighter: rouge
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
 
 tracking_id: #
 
