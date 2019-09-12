@@ -50,3 +50,8 @@ Networks aren't reliable, so you'll need to support partition tolerance. You'll 
 ### Availability patterns
 * Fail-over
     - Active-passive
+    - Active-active
+
+
+
+
