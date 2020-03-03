@@ -4,7 +4,7 @@ layout: researcher
 
 ## About Me
 
-I am from China and currently working in Singapore.
+I'm from China and currently working in London.
 
 
 # POSTS
